@@ -1,7 +1,7 @@
 #!/Users/mip182/opt/anaconda3/bin/python3
 
 import numpy as np
-from clique_partition import SimplexBuilder  # Импортируем класс из другого файла
+from clique_partition import SimplexBuilder
 
 
 class EmbeddingsPartition:
