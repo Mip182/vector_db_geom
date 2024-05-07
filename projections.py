@@ -5,12 +5,13 @@ import cvxpy as cp
 
 
 class SimplexProjection:
-    def __init__(self, simplexes):
+    def __init__(self, simplexes, eps = 1e-9):
         """
         Initializes the class with a list of simplexes.
         :param simplexes: List of np.array, where each array represents a simplex vertices.
         """
         self.simplexes = simplexes
+        self.eps = eps
 
     def project_point_to_simplex(self, y, vertices):
         """
@@ -44,14 +45,28 @@ class SimplexProjection:
                 if dist < min_dist:
                     closest = projected
                     min_dist = dist
+                    if min_dist < self.eps:
+                        break
             closest_projections.append(closest)
         return closest_projections
 
+    def is_projections_in_simplexes(self, points):
+        """
+        Checks whether the projections of the points on the closest simplexes are the same as the original points within a specified epsilon.
+        :param points: np.array - Array of d-dimensional vectors.
+        :param eps: float - Tolerance for checking equality.
+        :return: np.array - Array of booleans.
+        """
+        projections = self.find_closest_projection(points)
+        return np.array([np.linalg.norm(point - proj) < self.eps for point, proj in zip(points, projections)])
+
 
 # Example usage
-simplices = [np.random.rand(4, 3), np.random.rand(3, 3)]  # List of simplices with random vertices
-points = np.random.rand(5, 3)  # Set of points
+simplices = np.random.rand(5, 4, 3)  # List of simplices with random vertices
+points = np.random.rand(20, 3)  # Set of points
 projector = SimplexProjection(simplices)
 closest_projections = projector.find_closest_projection(points)
+zero_one_array = projector.is_projections_in_simplexes(points)
 print("Points: ", points)
 print("Closest Projections:", closest_projections)
+print("Projection Check (True or False):", zero_one_array)
