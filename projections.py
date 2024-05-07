@@ -62,7 +62,7 @@ class SimplexProjection:
         :param eps: float - Tolerance for checking equality.
         :return: np.array - Array of booleans.
         """
-        projections = self.find_closest_projection(points)
+        projections, _ = self.find_closest_projection(points)
         return np.array([np.linalg.norm(point - proj) < self.eps for point, proj in zip(points, projections)])
 
 
@@ -70,8 +70,8 @@ class SimplexProjection:
 simplices = np.random.rand(5, 4, 3)  # List of simplices with random vertices
 points = np.random.rand(20, 3)  # Set of points
 projector = SimplexProjection(simplices)
-closest_projections = projector.find_closest_projection(points)
-zero_one_array, projection_indexes = projector.is_projections_in_simplexes(points)
+closest_projections, projection_indexes = projector.find_closest_projection(points)
+zero_one_array = projector.is_projections_in_simplexes(points)
 print("Points: ", points)
 print("Closest Projections:", closest_projections)
 print("Projection Check (True or False):", zero_one_array)
