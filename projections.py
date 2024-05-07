@@ -5,7 +5,7 @@ import cvxpy as cp
 
 
 class SimplexProjection:
-    def __init__(self, simplexes, eps = 1e-9):
+    def __init__(self, simplexes, eps=1e-9):
         """
         Initializes the class with a list of simplexes.
         :param simplexes: List of np.array, where each array represents a simplex vertices.
