@@ -4,6 +4,7 @@ import numpy as np
 import cvxpy as cp
 
 
+
 class SimplexProjection:
     def __init__(self, simplexes, eps=1e-9):
         """
