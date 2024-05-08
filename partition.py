@@ -41,8 +41,9 @@ class EmbeddingsPartition:
         return cliques_of_partition
 
 
-# Example of usage
-embeddings = np.random.rand(10, 5)  # 10 embeddings, each with 5 dimensions
-partitioner = EmbeddingsPartition(embeddings, 5)
-cliques = partitioner.run_method("clique", k=3, eps=10)
-print("Found cliques:", cliques)
+if __name__ == "__main__":
+    # Example of usage
+    embeddings = np.random.rand(10, 5)  # 10 embeddings, each with 5 dimensions
+    partitioner = EmbeddingsPartition(embeddings, 5)
+    cliques = partitioner.run_method("clique", k=3, eps=10)
+    print("Found cliques:", cliques)

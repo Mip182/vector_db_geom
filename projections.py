@@ -10,7 +10,7 @@ class SimplexProjection:
         Initializes the class with a list of simplexes.
         :param simplexes: List of np.array, where each array represents a simplex vertices.
         """
-        self.simplexes = simplexes
+        self.simplexes = np.array(simplexes)
         self.eps = eps
 
     def project_point_to_simplex(self, y, vertices):
@@ -27,7 +27,7 @@ class SimplexProjection:
         constraints = [cp.sum(alphas) == 1, alphas >= 0]
         prob = cp.Problem(objective, constraints)
         prob.solve()
-        return x.value
+        return x.value.reshape(-1)
 
     def find_closest_projection(self, points):
         """
@@ -37,7 +37,7 @@ class SimplexProjection:
         :return: List of int - The projection simplex index for each point.
         """
         closest_projections = []
-        projection_simplex = []
+        projection_simplex_indices = []
         for point in points:
             closest = None
             min_dist = float('inf')
@@ -52,8 +52,8 @@ class SimplexProjection:
                     if min_dist < self.eps:
                         break
             closest_projections.append(closest)
-            projection_simplex.append(simplex_ind)
-        return closest_projections, projection_simplex
+            projection_simplex_indices.append(simplex_ind)
+        return np.vstack(closest_projections), np.array(projection_simplex_indices)
 
     def is_projections_in_simplexes(self, points):
         """
@@ -66,13 +66,14 @@ class SimplexProjection:
         return np.array([np.linalg.norm(point - proj) < self.eps for point, proj in zip(points, projections)])
 
 
-# Example usage
-simplices = np.random.rand(5, 4, 3)  # List of simplices with random vertices
-points = np.random.rand(20, 3)  # Set of points
-projector = SimplexProjection(simplices)
-closest_projections, projection_indexes = projector.find_closest_projection(points)
-zero_one_array = projector.is_projections_in_simplexes(points)
-print("Points: ", points)
-print("Closest Projections:", closest_projections)
-print("Projection Check (True or False):", zero_one_array)
-print("Projection Indexes:", projection_indexes)
+if __name__ == "__main__":
+    # Example usage
+    simplices = np.random.rand(5, 4, 3)  # List of simplices with random vertices
+    points = np.random.rand(20, 3)  # Set of points
+    projector = SimplexProjection(simplices)
+    closest_projections, projection_indexes = projector.find_closest_projection(points)
+    zero_one_array = projector.is_projections_in_simplexes(points)
+    print("Points: ", points)
+    print("Closest Projections:", closest_projections)
+    print("Projection Check (True or False):", zero_one_array)
+    print("Projection Indexes:", projection_indexes)
