@@ -1,0 +1,1 @@
+To run an experiment you should run the file 'experiments/{experiment_name}/{experiment_name}.py'
