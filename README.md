@@ -1,0 +1,1 @@
+Building topological structures onto embeddings space and analyzing theirs properties.
