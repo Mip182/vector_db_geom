@@ -61,7 +61,6 @@ def analyze_results(results):
         print("Number inside simplexes:", num_inside)
         print("Distance quantiles:", np.quantile(distances, [0.25, 0.5, 0.75]))
 
-        # Create histogram for distances
         plt.hist(distances, bins=30, alpha=0.5, label=label)
 
     plt.title('Histogram of Distances by Simplex Configuration')
