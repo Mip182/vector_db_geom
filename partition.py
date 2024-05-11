@@ -27,16 +27,16 @@ class EmbeddingsPartition:
         else:
             raise ValueError(f"Method {method_name} is not supported.")
 
-    def clique_method(self, k, eps, metric='euclidean'):
+    def clique_method(self, k, t, metric='euclidean'):
         """
         Uses the SimplexBuilder to build a graph with embeddings and find cliques of size k.
         :param k: int - Size of the cliques to find.
-        :param eps: float - Distance threshold to connect nodes in the graph.
+        :param t: int - The number of nearest neighbors to consider for building the graph.
         :param metric: str - Metric used for distance calculation.
         :return: List of cliques found in the graph.
         """
-        simplex_builder = SimplexBuilder(self.embeddings, k, eps, metric)
-        simplex_builder.build_graph()
+        simplex_builder = SimplexBuilder(self.embeddings, k, t, metric)
+        simplex_builder.build_knn_graph()
         cliques_of_partition = simplex_builder.find_cliques()
         return cliques_of_partition
 
@@ -45,5 +45,5 @@ if __name__ == "__main__":
     # Example of usage
     embeddings = np.random.rand(10, 5)  # 10 embeddings, each with 5 dimensions
     partitioner = EmbeddingsPartition(embeddings, 5)
-    cliques = partitioner.run_method("clique", k=3, eps=10)
+    cliques = partitioner.run_method("clique", k=3, t=4)
     print("Found cliques:", cliques)
