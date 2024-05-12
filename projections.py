@@ -55,6 +55,8 @@ class SimplexProjection:
 
         for simplex_vertices in self.simplexes:
             projected_points = self.project_points_to_simplex_fast(points, np.array(simplex_vertices))
+            if projected_points is None:
+                continue
             distances = np.linalg.norm(points - projected_points, axis=1)
 
             # Update closest projections
