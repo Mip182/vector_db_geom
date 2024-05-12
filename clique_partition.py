@@ -62,13 +62,12 @@ class SimplexBuilder:
 
         return cliques_of_partition
 
-    def build_simplexes(self):
+    def build_simplexes(self, cliques):
         """
         Builds real simplexes from the cliques.
         Converts each clique into a simplex by taking the corresponding embedding points.
         :return: List of np.array - Each array represents a simplex with its vertices.
         """
-        cliques = self.find_cliques()
         simplexes = []
 
         for clique in cliques:
