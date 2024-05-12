@@ -2,6 +2,7 @@
 
 import numpy as np
 import cvxpy as cp
+from joblib import Parallel, delayed
 
 
 class SimplexProjection:
@@ -53,13 +54,18 @@ class SimplexProjection:
         closest_projections = np.zeros_like(points)
         min_distances = np.full(n_points, np.inf)
 
-        for simplex_vertices in self.simplexes:
+        def process_simplex(simplex_vertices):
             projected_points = self.project_points_to_simplex_fast(points, np.array(simplex_vertices))
             if projected_points is None:
-                continue
+                return None, None
             distances = np.linalg.norm(points - projected_points, axis=1)
+            return distances, projected_points
 
-            # Update closest projections
+        results = Parallel(n_jobs=-1)(delayed(process_simplex)(simplex_vertices) for simplex_vertices in self.simplexes)
+
+        for distances, projected_points in results:
+            if distances is None:
+                continue
             closer_indices = distances < min_distances
             min_distances[closer_indices] = distances[closer_indices]
             closest_projections[closer_indices] = projected_points[closer_indices]
