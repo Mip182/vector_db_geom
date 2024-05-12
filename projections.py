@@ -5,15 +5,16 @@ import cvxpy as cp
 
 
 class SimplexProjection:
-    def __init__(self, simplexes, eps=1e-9):
+    def __init__(self, simplexes, eps=1e-9, is_fast=True):
         """
         Initializes the class with a list of simplexes.
         :param simplexes: List of np.array, where each array represents a simplex vertices.
         """
         self.simplexes = np.array(simplexes)
         self.eps = eps
+        self.is_fast = is_fast
 
-    def project_points_to_simplex(self, points, simplex_vertices):
+    def project_points_to_simplex_fast(self, points, simplex_vertices):
         """
         Projects a batch of points onto a given simplex.
 
@@ -41,7 +42,7 @@ class SimplexProjection:
 
         return projected_points.value
 
-    def find_closest_projections(self, points):
+    def find_closest_projections_fast(self, points):
         """
         Finds the closest projections of a set of points onto multiple simplexes.
 
@@ -53,7 +54,7 @@ class SimplexProjection:
         min_distances = np.full(n_points, np.inf)
 
         for simplex_vertices in self.simplexes:
-            projected_points = self.project_points_to_simplex(points, np.array(simplex_vertices))
+            projected_points = self.project_points_to_simplex_fast(points, np.array(simplex_vertices))
             distances = np.linalg.norm(points - projected_points, axis=1)
 
             # Update closest projections
@@ -62,6 +63,60 @@ class SimplexProjection:
             closest_projections[closer_indices] = projected_points[closer_indices]
 
         return closest_projections
+
+    def project_point_to_simplex_slow(self, y, vertices):
+        """
+        Project a point onto a simplex defined by its vertices.
+        :param y: np.array - The point to be projected.
+        :param vertices: np.array - The vertices of the simplex.
+        :return: np.array - The projected point on the simplex.
+        """
+        k = vertices.shape[0]
+        alphas = cp.Variable(k)
+        x = vertices.T @ alphas
+        objective = cp.Minimize(cp.norm(y - x, 2))
+        constraints = [cp.sum(alphas) == 1, alphas >= 0]
+        prob = cp.Problem(objective, constraints)
+        prob.solve()
+        return x.value.reshape(-1)
+
+    def find_closest_projections_slow(self, points):
+        """
+        For each point in points, finds the closest projection among the projections on the simplixes.
+        :param points: np.array - Array of d-dimensional vectors.
+        :return: List of np.array - Closest projections for each point.
+        :return: List of int - The projection simplex index for each point.
+        """
+        closest_projections = []
+        projection_simplex_indices = []
+        for point in points:
+            closest = None
+            min_dist = float('inf')
+            simplex_ind = None
+            for ind, simplex in enumerate(self.simplexes):
+                projected = self.project_point_to_simplex(point, simplex)
+                dist = np.linalg.norm(point - projected)
+                if dist < min_dist:
+                    closest = projected
+                    min_dist = dist
+                    simplex_ind = ind
+                    if min_dist < self.eps:
+                        break
+            closest_projections.append(closest)
+            projection_simplex_indices.append(simplex_ind)
+        return np.vstack(closest_projections), np.array(projection_simplex_indices)
+
+    def find_closest_projections(self, points):
+        """
+        For each point in points, finds the closest projection among the projections on the simplixes.
+        If is_fast is True, then run fast version, otherwise run slow version.
+        :param points: np.array - Array of d-dimensional vectors.
+        :return: List of np.array - Closest projections for each point.
+        """
+        if self.is_fast:
+            return self.find_closest_projections_fast(points)
+        else:
+            return self.find_closest_projections_slow(points)
 
     def is_projections_in_simplexes(self, points):
         """
