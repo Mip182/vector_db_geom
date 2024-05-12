@@ -90,14 +90,13 @@ class SimplexProjection:
 
     def find_closest_projections_slow(self, points):
         """
-        For each point in points, finds the closest projection among the projections on the simplixes.
+        For each point in points, finds the closest projection among the projections on the simplices.
         :param points: np.array - Array of d-dimensional vectors.
         :return: List of np.array - Closest projections for each point.
         :return: List of int - The projection simplex index for each point.
         """
-        closest_projections = []
-        projection_simplex_indices = []
-        for point in points:
+
+        def process_point(point):
             closest = None
             min_dist = float('inf')
             simplex_ind = None
@@ -110,8 +109,12 @@ class SimplexProjection:
                     simplex_ind = ind
                     if min_dist < self.eps:
                         break
-            closest_projections.append(closest)
-            projection_simplex_indices.append(simplex_ind)
+            return closest, simplex_ind
+
+        results = Parallel(n_jobs=-1)(delayed(process_point)(point) for point in points)
+
+        closest_projections, projection_simplex_indices = zip(*results)
+
         return np.vstack(closest_projections), np.array(projection_simplex_indices)
 
     def find_closest_projections(self, points):
@@ -124,7 +127,8 @@ class SimplexProjection:
         if self.is_fast:
             return self.find_closest_projections_fast(points)
         else:
-            return self.find_closest_projections_slow(points)
+            closest_projections, _ = self.find_closest_projections_slow(points)
+            return closest_projections
 
     def is_projections_in_simplexes(self, points):
         """
