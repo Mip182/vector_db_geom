@@ -38,7 +38,7 @@ class EmbeddingsPartition:
         simplex_builder = SimplexBuilder(self.embeddings, k, t, metric)
         simplex_builder.build_knn_graph()
         cliques_of_partition = simplex_builder.find_cliques()
-        return cliques_of_partition
+        return simplex_builder.build_simplexes(cliques_of_partition)
 
 
 if __name__ == "__main__":
