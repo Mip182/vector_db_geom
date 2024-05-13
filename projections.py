@@ -43,13 +43,21 @@ class SimplexProjection:
 
         return projected_points.value
 
-    def find_closest_projections_fast(self, points):
+    def find_closest_projections_fast(self, points, simplex_set=None):
         """
-        Finds the closest projections of a set of points onto multiple simplexes.
+        Finds the closest projections of a set of points onto multiple simplexes using parallel computation.
 
-        :param points: np.array of shape (n_points, n_dimensions), points to project.
-        :return: np.array of shape (n_points, n_dimensions), closest projections.
+        :param points: np.array of shape (n_points, n_dimensions)
+            Points to project onto the simplexes.
+        :param simplex_set: list of lists or np.array, optional
+            Set of simplexes for projection. Defaults to self.simplexes if None.
+
+        :return: np.array of shape (n_points, n_dimensions)
+            Closest projections of the input points.
         """
+        if simplex_set is None:
+            simplex_set = self.simplexes
+
         n_points = points.shape[0]
         closest_projections = np.zeros_like(points)
         min_distances = np.full(n_points, np.inf)
@@ -61,7 +69,7 @@ class SimplexProjection:
             distances = np.linalg.norm(points - projected_points, axis=1)
             return distances, projected_points
 
-        results = Parallel(n_jobs=-1)(delayed(process_simplex)(simplex_vertices) for simplex_vertices in self.simplexes)
+        results = Parallel(n_jobs=-1)(delayed(process_simplex)(simplex_vertices) for simplex_vertices in simplex_set)
 
         for distances, projected_points in results:
             if distances is None:
@@ -88,19 +96,27 @@ class SimplexProjection:
         prob.solve()
         return x.value.reshape(-1)
 
-    def find_closest_projections_slow(self, points):
+    def find_closest_projections_slow(self, points, simplex_set=None):
         """
-        For each point in points, finds the closest projection among the projections on the simplices.
-        :param points: np.array - Array of d-dimensional vectors.
-        :return: List of np.array - Closest projections for each point.
-        :return: List of int - The projection simplex index for each point.
+        Finds the closest projections of points onto multiple simplexes.
+
+        :param points: np.array
+            Array of d-dimensional vectors to be projected.
+        :param simplex_set: list of lists or np.array, optional
+            Set of simplexes for projection. Defaults to self.simplexes if None.
+
+        :return: tuple
+            - np.array: Closest projections for each point.
+            - np.array: Indices of the simplex for each closest projection.
         """
+        if simplex_set is None:
+            simplex_set = self.simplexes
 
         def process_point(point):
             closest = None
             min_dist = float('inf')
             simplex_ind = None
-            for ind, simplex in enumerate(self.simplexes):
+            for ind, simplex in enumerate(simplex_set):
                 projected = self.project_point_to_simplex(point, simplex)
                 dist = np.linalg.norm(point - projected)
                 if dist < min_dist:
@@ -117,17 +133,24 @@ class SimplexProjection:
 
         return np.vstack(closest_projections), np.array(projection_simplex_indices)
 
-    def find_closest_projections(self, points):
+    def find_closest_projections(self, points, simplex_set=None):
         """
-        For each point in points, finds the closest projection among the projections on the simplixes.
-        If is_fast is True, then run fast version, otherwise run slow version.
-        :param points: np.array - Array of d-dimensional vectors.
-        :return: List of np.array - Closest projections for each point.
+        Finds the closest projections of points onto multiple simplexes.
+
+        Uses a fast or slow method based on the value of is_fast.
+
+        :param points: np.array
+            Array of d-dimensional vectors to be projected.
+        :param simplex_set: list of lists or np.array, optional
+            Set of simplexes for projection. Defaults to self.simplexes if None.
+
+        :return: np.array
+            Closest projections for each point.
         """
         if self.is_fast:
-            return self.find_closest_projections_fast(points)
+            return self.find_closest_projections_fast(points, simplex_set)
         else:
-            closest_projections, _ = self.find_closest_projections_slow(points)
+            closest_projections, _ = self.find_closest_projections_slow(points, simplex_set)
             return closest_projections
 
     def is_projections_in_simplexes(self, points):
@@ -139,6 +162,25 @@ class SimplexProjection:
         """
         projections = self.find_closest_projections(points)
         return np.array([np.linalg.norm(point - proj) < self.eps for point, proj in zip(points, projections)])
+
+    def sample_simplexes(self, share):
+        """
+        Selects a random sample of the given share of simplexes from self.simplexes.
+
+        :param share: float
+            The fraction of simplexes to sample (e.g., 0.1 for 10%).
+
+        :return: list
+            A random sample of simplexes.
+        """
+        if not 0 < share <= 1:
+            raise ValueError("Share must be a float between 0 and 1.")
+
+        n_simplexes = len(self.simplexes)
+        sample_size = int(n_simplexes * share)
+        sampled_indices = np.random.choice(n_simplexes, sample_size, replace=False)
+
+        return [self.simplexes[i] for i in sampled_indices]
 
 
 if __name__ == "__main__":
